@@ -1,0 +1,13 @@
+# A stack with two routed servers and one sidecar, to try run-stack with: `make demo`.
+
+name = "demo"
+command = "sh dev.sh"
+
+[ports]
+WEB_PORT = { route = "" }
+API_PORT = { route = "api" }
+SIDECAR_PORT = { optional = true }
+
+[env]
+APP_URL = "{url}"
+API_URL = "http://localhost:{API_PORT}"

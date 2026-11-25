@@ -1,0 +1,7 @@
+{
+  "name": "run-stack",
+  "version": "0.1.0",
+  "description": "Run any checkout or git worktree as its own local stack, with free ports and https://<worktree>.<name>.local URLs, so several run side by side without Docker.",
+  "author": { "name": "Jack Allen" },
+  "repository": "https://github.com/jackall3n/run-stack"
+}

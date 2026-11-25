@@ -1,0 +1,91 @@
+name: release
+
+# Every push to main that changes the program is released as the next patch version. Pushing a
+# tag such as v0.2.0 releases exactly that version instead.
+on:
+  push:
+    branches: [main]
+    paths: ["**.go", "go.mod", "go.sum", "internal/**", ".github/workflows/release.yml"]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency: release
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: next
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          elif [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
+            # This commit was pushed together with its own tag; that run does the release.
+            tag=""
+          else
+            latest="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
+
+            if [ -z "$latest" ]; then
+              tag=v0.1.0
+            else
+              IFS=. read -r major minor patch <<< "${latest#v}"
+              tag="v$major.$minor.$((patch + 1))"
+            fi
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    if: needs.version.outputs.tag != ''
+    strategy:
+      matrix:
+        include:
+          # macOS builds need cgo for the system's DNS API, so they are built on macOS.
+          - { runner: macos-latest, os: darwin, cgo: 1 }
+          - { runner: ubuntu-latest, os: linux, cgo: 0 }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go run github.com/go-task/task/v3/cmd/task@latest check
+      - name: Build
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          mkdir dist
+          for arch in arm64 amd64; do
+            CGO_ENABLED=${{ matrix.cgo }} GOOS=${{ matrix.os }} GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X main.version=${TAG#v}" -o build/run-stack .
+            tar -czf "dist/run-stack_${{ matrix.os }}_${arch}.tar.gz" -C build run-stack
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: dist/*.tar.gz
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          cd dist
+          sha256sum *.tar.gz > checksums.txt
+          gh release create "$TAG" *.tar.gz checksums.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes

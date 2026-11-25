@@ -1,0 +1,29 @@
+# What run-stack needs to run this repo. https://github.com/jackall3n/run-stack
+#
+# The main checkout is served at https://<domain>, a git worktree at https://<worktree>.<domain>.
+
+name = "{{name}}"
+command = "npm run dev"
+# domain = "{{name}}.{{tld}}"
+
+# Untracked files a new worktree copies from the main checkout, if it lacks them.
+# copy = [".env"]
+
+# Every port the command (or anything it starts) listens on. Each gets a free number, passed to
+# the command as an env variable of the same name; the command must listen on that number.
+[ports]
+PORT = { route = "" }                       # https://<host>
+# API_PORT = { route = "api" }              # https://api.<host>
+# INSPECTOR_PORT = { optional = true }      # a number, no URL; "wait" doesn't wait for it
+
+# Extra variables. They win over the repo's .env files, as long as whatever loads those does not
+# override the environment (dotenv and Vite don't).
+# Placeholders: {host} {url} {url:PORT_NAME} {PORT_NAME} {id} {name} {worktree} {db} {dir} {main}
+[env]
+# APP_URL = "{url}"
+# API_URL = "http://localhost:{API_PORT}"
+# DATABASE_URL = "postgresql://localhost:5432/{db}"
+
+# [hooks]
+# pre_up = ["createdb {db} 2>/dev/null || true"]   # run before the command, with the same env
+# post_down = []

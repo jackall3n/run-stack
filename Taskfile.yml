@@ -1,0 +1,54 @@
+# https://taskfile.dev — run `task` to list what is here.
+version: "3"
+
+vars:
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+  PREFIX: '{{.PREFIX | default (printf "%s/.local" .HOME)}}'
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  build:
+    desc: Build bin/run-stack
+    cmds:
+      - go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o bin/run-stack .
+
+  install:
+    desc: Build and install to ~/.local/bin, restarting the proxy if it is running
+    deps: [build]
+    cmds:
+      - install -d {{.PREFIX}}/bin
+      - install -m 755 bin/run-stack {{.PREFIX}}/bin/run-stack
+      - cmd: '[ "$({{.PREFIX}}/bin/run-stack proxy status)" = "proxy not running" ] || {{.PREFIX}}/bin/run-stack proxy restart'
+        silent: true
+
+  test:
+    desc: Run the tests
+    cmds:
+      - go test ./...
+
+  check:
+    desc: "Everything CI runs: formatting, vet, tests, and the build without cgo"
+    cmds:
+      - cmd: test -z "$(gofmt -l .)" || { echo "gofmt needed:"; gofmt -l .; exit 1; }
+        silent: true
+      - go vet ./...
+      - go test ./...
+      - CGO_ENABLED=0 go build -o /dev/null .
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - gofmt -w .
+
+  demo:
+    desc: Run the example stack in the foreground (Ctrl-C stops it)
+    deps: [install]
+    dir: examples/demo
+    interactive: true
+    cmds:
+      - run-stack up

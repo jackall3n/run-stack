@@ -1,0 +1,11 @@
+{
+  "name": "run-stack",
+  "owner": { "name": "Jack Allen" },
+  "plugins": [
+    {
+      "name": "run-stack",
+      "source": "./",
+      "description": "Run any checkout or git worktree as its own local stack, with free ports and https://<worktree>.<name>.local URLs."
+    }
+  ]
+}
