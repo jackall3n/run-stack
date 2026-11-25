@@ -55,12 +55,11 @@ func TestParseKeepsPortOrderAndDefaults(t *testing.T) {
 
 func TestParseRejectsMistakes(t *testing.T) {
 	for name, source := range map[string]string{
-		"unknown key":      "command = \"x\"\ncomand = \"y\"",
-		"missing command":  "name = \"x\"",
-		"shared route":     "command = \"x\"\n[ports]\nA = { route = \"\" }\nB = { route = \"\" }",
-		"bad port name":    "command = \"x\"\n[ports]\nweb-port = {}",
-		"bad route":        "command = \"x\"\n[ports]\nA = { route = \"Not A Host\" }",
-		"dashboard's host": "command = \"x\"\ndomain = \"stack.local\"",
+		"unknown key":     "command = \"x\"\ncomand = \"y\"",
+		"missing command": "name = \"x\"",
+		"shared route":    "command = \"x\"\n[ports]\nA = { route = \"\" }\nB = { route = \"\" }",
+		"bad port name":   "command = \"x\"\n[ports]\nweb-port = {}",
+		"bad route":       "command = \"x\"\n[ports]\nA = { route = \"Not A Host\" }",
 	} {
 		if _, err := Parse(source, "fallback"); err == nil {
 			t.Errorf("%s: expected an error", name)

@@ -346,3 +346,29 @@ func Stop(id string) (bool, error) {
 
 	return true, nil
 }
+
+// Forget drops a stopped stack: its ports are released and its log removed.
+func Forget(id string) error {
+	err := state.Update(func(current *state.State) error {
+		entry := current.Stacks[id]
+
+		if entry == nil {
+			return fmt.Errorf("no stack called %s", id)
+		}
+
+		if entry.Status() != state.Stopped {
+			return fmt.Errorf("%s is %s. Stop it first: run-stack down %s", id, entry.Status(), id)
+		}
+
+		delete(current.Stacks, id)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	os.Remove(home.LogFile(id))
+
+	return nil
+}

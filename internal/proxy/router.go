@@ -44,14 +44,10 @@ func newRouter(httpsPort int, announcer dns.Announcer) *router {
 	return router
 }
 
-// refresh rereads which hosts are live, and keeps exactly those (and the dashboard) resolving.
+// refresh rereads which hosts are live, and keeps exactly those resolving.
 func (router *router) refresh() {
 	routes := map[string]state.Route{}
 	hosts := []string{}
-
-	for host := range config.DashboardHosts {
-		hosts = append(hosts, host)
-	}
 
 	for _, entry := range state.Read().Stacks {
 		if entry.Running() {
@@ -89,12 +85,6 @@ func hostOf(request *http.Request) string {
 
 func (router *router) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	host := hostOf(request)
-
-	if config.DashboardHosts[host] {
-		router.dashboard(writer, request)
-
-		return
-	}
 
 	route, ok := router.lookup(host)
 
@@ -150,6 +140,6 @@ func (router *router) notFound(writer http.ResponseWriter, host string) {
 	}
 
 	writer.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(writer, "run-stack: no running stack serves %s\n\nRunning:\n  %s\n\nDashboard: %s\n",
-		host, strings.Join(known, "\n  "), config.Origin("stack."+config.DefaultTLD(), router.httpsPort))
+	fmt.Fprintf(writer, "run-stack: no running stack serves %s\n\nRunning:\n  %s\n\nEvery stack: run-stack dash\n",
+		host, strings.Join(known, "\n  "))
 }

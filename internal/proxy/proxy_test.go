@@ -3,7 +3,6 @@ package proxy
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -71,7 +70,7 @@ func TestRoutesByHostOverTrustedTLS(t *testing.T) {
 	server.StartTLS()
 	defer server.Close()
 
-	if got := strings.Join(announced.hosts, ","); got != "explorer.shop.local,shop.local,stack.local,stack.localhost" {
+	if got := strings.Join(announced.hosts, ","); got != "explorer.shop.local,shop.local" {
 		t.Errorf("announced %s", got)
 	}
 
@@ -115,36 +114,5 @@ func TestRoutesByHostOverTrustedTLS(t *testing.T) {
 
 	if status, body := call("GET", "old.local", "/", nil); status != 404 || !strings.Contains(body, "https://shop.local") {
 		t.Errorf("stopped stack's host: %d %q", status, body)
-	}
-
-	status, body := call("GET", "stack.local", "/api/stacks", nil)
-
-	var views []stackView
-
-	if err := json.Unmarshal([]byte(body), &views); status != 200 || err != nil || len(views) != 2 {
-		t.Fatalf("dashboard api: %d %q", status, body)
-	}
-
-	if views[0].ID != "shop" || views[0].Status != state.Running || !views[0].Ports[0].Listening || views[1].Status != state.Stopped {
-		t.Errorf("dashboard views: %+v", views)
-	}
-
-	if status, _ := call("GET", "stack.local", "/", nil); status != 200 {
-		t.Errorf("dashboard page: %d", status)
-	}
-
-	// Stopping is only for the dashboard's own page: not a bare request, not another site.
-	for name, headers := range map[string]map[string]string{"no origin": nil, "another site": {"Origin": "https://evil.example"}} {
-		if status, _ := call("POST", "stack.local", "/api/stop?id=old", headers); status != 403 {
-			t.Errorf("stop with %s: %d, want 403", name, status)
-		}
-	}
-
-	if status, _ := call("POST", "stack.local", "/api/stop?id=old", map[string]string{"Origin": "https://stack.local"}); status != 202 {
-		t.Errorf("stop from the dashboard: %d, want 202", status)
-	}
-
-	if status, _ := call("GET", "stack.local", "/api/logs?id=../state", nil); status != 404 {
-		t.Errorf("logs of an unknown id: %d, want 404", status)
 	}
 }

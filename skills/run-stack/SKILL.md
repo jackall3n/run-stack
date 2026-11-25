@@ -17,7 +17,7 @@ Everything goes through the `run-stack` CLI, run from inside the folder (`cd <di
 
 The CLI works out whether the folder is the main checkout or a worktree, the stack's id, its ports and its URLs. Trust it: never derive or guess a port or URL, only repeat what it prints. Ports are different for every stack, so never assume `localhost:3000`.
 
-- Every stack on the machine: `run-stack ls`. The same in the browser, with logs and start/stop buttons: `https://stack.local` (`run-stack dash` opens it).
+- Every stack on the machine: `run-stack ls`. `run-stack dash` is the same as a full-screen terminal dashboard with logs and start/stop keys: it is for the user to run in their own terminal, so suggest it rather than running it (without a terminal it prints the same list as `ls`).
 - This folder's URLs without starting anything: `run-stack urls`.
 - Logs: `run-stack logs` (last 200 lines) or `run-stack logs -f` in the background.
 - A one-off command with the stack's ports and env (migrations, seeds, tests against it): `run-stack exec -- <command>`.

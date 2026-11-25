@@ -4,17 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
+
+	"github.com/charmbracelet/x/term"
 
 	"github.com/jackall3n/run-stack/internal/certs"
 	"github.com/jackall3n/run-stack/internal/config"
+	tui "github.com/jackall3n/run-stack/internal/dash"
 	"github.com/jackall3n/run-stack/internal/dns"
 	"github.com/jackall3n/run-stack/internal/home"
 	"github.com/jackall3n/run-stack/internal/ports"
 	"github.com/jackall3n/run-stack/internal/proxy"
+	"github.com/jackall3n/run-stack/internal/runner"
 	"github.com/jackall3n/run-stack/internal/state"
 )
 
@@ -63,18 +65,14 @@ func list([]string) (int, error) {
 	return 0, nil
 }
 
-func dash([]string) (int, error) {
-	if err := proxy.Ensure(); err != nil {
-		return 1, err
+func dash(args []string) (int, error) {
+	// Without a terminal to draw on (a pipe, a script, an agent) the list says the same thing.
+	if !term.IsTerminal(os.Stdout.Fd()) || !term.IsTerminal(os.Stdin.Fd()) {
+		return list(args)
 	}
 
-	address := config.Origin("stack."+config.DefaultTLD(), home.LoadSettings().HTTPSPort)
-
-	fmt.Println(address)
-	trustHint()
-
-	if runtime.GOOS == "darwin" {
-		exec.Command("open", address).Run()
+	if err := tui.Run(); err != nil {
+		return 1, err
 	}
 
 	return 0, nil
@@ -87,26 +85,10 @@ func forget(args []string) (int, error) {
 
 	id := args[0]
 
-	err := state.Update(func(current *state.State) error {
-		entry := current.Stacks[id]
-
-		if entry == nil {
-			return fmt.Errorf("no stack called %s", id)
-		}
-
-		if entry.Status() != state.Stopped {
-			return fmt.Errorf("%s is %s. Stop it first: run-stack down %s", id, entry.Status(), id)
-		}
-
-		delete(current.Stacks, id)
-
-		return nil
-	})
-	if err != nil {
+	if err := runner.Forget(id); err != nil {
 		return 1, err
 	}
 
-	os.Remove(home.LogFile(id))
 	fmt.Println("forgot", id)
 
 	return 0, nil

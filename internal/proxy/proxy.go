@@ -1,5 +1,5 @@
 // Package proxy is the one shared process that fronts every stack: it serves HTTPS for each
-// routed host, makes .local names resolve, and hosts the dashboard.
+// routed host, and makes .local names resolve.
 package proxy
 
 import (

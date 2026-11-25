@@ -30,7 +30,7 @@ Run from inside the checkout (the main one or any git worktree):
 From anywhere:
 
   run-stack ls                every stack on this machine
-  run-stack dash              open the dashboard, https://stack.local
+  run-stack dash              the dashboard: every stack, its ports and its logs
   run-stack forget <id>       drop a stopped stack and release its ports
   run-stack trust             trust the local certificate authority (once)
   run-stack doctor            check the machine is set up

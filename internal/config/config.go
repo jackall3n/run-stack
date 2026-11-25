@@ -18,9 +18,6 @@ import (
 // FileName is the config file, at the root of a checkout or in a folder inside it.
 const FileName = "run-stack.toml"
 
-// DashboardHosts are served by the proxy itself, so no stack may use them.
-var DashboardHosts = map[string]bool{"stack.local": true, "stack.localhost": true}
-
 type PortSpec struct {
 	// Route is the subdomain this port is served at: "" is the stack's own host, "jobs" is
 	// jobs.<host>. Nil means the port gets a number but no URL.
@@ -184,9 +181,7 @@ func Parse(source, fallbackName string) (Config, error) {
 		config.Domain = config.Name + "." + DefaultTLD()
 	}
 
-	if config.Domain = strings.ToLower(config.Domain); DashboardHosts[config.Domain] {
-		return config, fmt.Errorf("%s: %s is the dashboard's address. Choose another name or domain", FileName, config.Domain)
-	}
+	config.Domain = strings.ToLower(config.Domain)
 
 	for _, key := range meta.Keys() {
 		if len(key) == 2 && key[0] == "ports" {

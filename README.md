@@ -5,7 +5,7 @@ Run any checkout, or several git worktrees of it, as local stacks side by side, 
 - Every port a stack needs gets a free number, kept across restarts and passed to your dev command as env variables.
 - The ports you route get HTTPS URLs: `https://shop.local` for the main checkout, `https://<worktree>.shop.local` for a worktree, `https://jobs.<host>` for a second service.
 - Your processes run on the host, with the host's dependencies and tools.
-- A dashboard at `https://stack.local` shows every stack, its ports and its logs, and can start and stop them.
+- `run-stack dash` is a dashboard in your terminal: every stack, its ports and its logs, with keys to start, stop and open them.
 
 One binary does all of it: the port bookkeeping, supervising the processes, the HTTPS proxy and the name resolution.
 
@@ -55,7 +55,7 @@ Then, from the main checkout or any worktree:
 run-stack up            # foreground; Ctrl-C stops it. -d to detach
 run-stack wait          # until every port answers
 run-stack ls            # every stack on the machine
-run-stack dash          # the dashboard, https://stack.local
+run-stack dash          # the dashboard: every stack, its ports and logs
 run-stack ports         # what it really listens on; flags ports nobody declared
 run-stack logs -f
 run-stack exec -- bun run db:migrate    # a command with the stack's env
@@ -83,7 +83,7 @@ The command must listen on the numbers it is given: change `--port 8787` to `--p
 - **Databases.** run-stack leaves `DATABASE_URL` alone, so by default every stack uses whatever your `.env` points at. For a database per worktree on the same server, set `DATABASE_URL = "postgresql://localhost:5432/{db}"` and create it in a `pre_up` hook.
 - **`.env` files.** The stack's variables are in the process environment, so they win wherever the loader does not override it (dotenv and Vite do not).
 - **Names.** While a stack runs, its `.local` hosts resolve to this machine in every program (browsers, curl, Node), with no sudo and no `/etc/hosts`. They stop resolving when it stops. Don't give a stack the same domain as something else that claims it, such as an OrbStack container domain.
-- **Only this machine.** The proxy refuses connections from other machines, so stacks and the dashboard are not reachable from your network.
+- **Only this machine.** The proxy refuses connections from other machines, so stacks are not reachable from your network.
 - **Certificates.** The authority lives in `~/.run-stack/ca`. Its key can sign for any site and is readable only by you. Firefox has its own store: import `rootCA.pem` there. Stacks get `NODE_EXTRA_CA_CERTS` pointing at it.
 - **State.** `~/.run-stack/state.json` records every stack and its ports; logs are in `~/.run-stack/logs`. `~/.run-stack/config.json` can set `https_port`, `http_port` and `port_range`.
 
@@ -105,7 +105,8 @@ internal/
   state/                ~/.run-stack/state.json: every stack, its ports, whether it runs
   ports/                giving out port numbers; finding what a stack really listens on
   runner/               starting a stack's command, supervising it, stopping it
-  proxy/                the shared HTTPS proxy, its routing and the dashboard
+  proxy/                the shared HTTPS proxy and its routing
+  dash/                 the terminal dashboard (Bubble Tea)
   certs/                the local certificate authority
   dns/                  making .local names resolve (macOS)
   home/                 where files live, and machine-wide settings
